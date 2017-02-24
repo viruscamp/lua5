@@ -46,6 +46,9 @@ static void print_usage (void) {
   "  -e stat  execute string " LUA_QL("stat") "\n"
   "  -l name  require library " LUA_QL("name") "\n"
   "  -i       enter interactive mode after executing " LUA_QL("script") "\n"
+#ifdef LUA_COMPAT_VARARG
+  "  -dv      disable compat vararg\n"
+#endif
   "  -v       show version information\n"
   "  --       stop handling options\n"
   "  -        execute stdin and stop handling options\n"
@@ -257,12 +260,19 @@ static int handle_script (lua_State *L, char **argv, int n) {
 /* check that argument has no extra characters at the end */
 #define notail(x)	{if ((x)[2] != '\0') return -1;}
 
+#define	IS(s)	(strcmp(argv[i],s)==0)
 
-static int collectargs (char **argv, int *pi, int *pv, int *pe) {
+static int collectargs (char **argv, int *pi, int *pv, int *pe, lua_State *L) {
   int i;
   for (i = 1; argv[i] != NULL; i++) {
     if (argv[i][0] != '-')  /* not an option? */
         return i;
+#ifdef LUA_COMPAT_VARARG
+    if (IS("-dv")) {
+      lua_using_compat_vararg(L, 0);
+      continue;
+    }
+#endif
     switch (argv[i][1]) {  /* option */
       case '-':
         notail(argv[i]);
@@ -349,7 +359,7 @@ static int pmain (lua_State *L) {
   lua_gc(L, LUA_GCRESTART, 0);
   s->status = handle_luainit(L);
   if (s->status != 0) return 0;
-  script = collectargs(argv, &has_i, &has_v, &has_e);
+  script = collectargs(argv, &has_i, &has_v, &has_e, L);
   if (script < 0) {  /* invalid args? */
     print_usage();
     s->status = 1;

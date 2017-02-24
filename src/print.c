@@ -171,6 +171,7 @@ static void PrintHeader(const Proto* f)
  	(f->linedefined==0)?"main":"function",s,
 	f->linedefined,f->lastlinedefined,
 	S(f->sizecode),f->sizecode*Sizeof(Instruction),VOID(f));
+ printf("is_vararg=%d, ", f->is_vararg);
  printf("%d%s param%s, %d slot%s, %d upvalue%s, ",
 	f->numparams,f->is_vararg?"+":"",SS(f->numparams),
 	S(f->maxstacksize),S(f->nups));

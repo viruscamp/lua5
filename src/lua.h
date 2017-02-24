@@ -361,6 +361,10 @@ struct lua_Debug {
 /* }====================================================================== */
 
 
+#ifdef LUA_COMPAT_VARARG
+LUA_API int lua_using_compat_vararg (lua_State *L, int using_compat_vararg);
+#endif
+
 /******************************************************************************
 * Copyright (C) 1994-2012 Lua.org, PUC-Rio.  All rights reserved.
 *

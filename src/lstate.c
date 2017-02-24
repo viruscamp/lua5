@@ -178,6 +178,9 @@ LUA_API lua_State *lua_newstate (lua_Alloc f, void *ud) {
   g->gcpause = LUAI_GCPAUSE;
   g->gcstepmul = LUAI_GCMUL;
   g->gcdept = 0;
+#ifdef LUA_COMPAT_VARARG
+  g->using_compat_vararg = 1;
+#endif
   for (i=0; i<NUM_TAGS; i++) g->mt[i] = NULL;
   if (luaD_rawrunprotected(L, f_luaopen, NULL) != 0) {
     /* memory allocation error: free partial state */
@@ -212,3 +215,11 @@ LUA_API void lua_close (lua_State *L) {
   close_state(L);
 }
 
+
+#ifdef LUA_COMPAT_VARARG
+LUA_API int lua_using_compat_vararg (lua_State *L, int using_compat_vararg) {
+  if (using_compat_vararg >= 0)
+    G(L)->using_compat_vararg = using_compat_vararg;
+  return G(L)->using_compat_vararg;
+}
+#endif

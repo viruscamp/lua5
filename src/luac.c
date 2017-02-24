@@ -29,6 +29,9 @@
 static int listing=0;			/* list bytecodes? */
 static int dumping=1;			/* dump bytecodes? */
 static int stripping=0;			/* strip debug information? */
+#ifdef LUA_COMPAT_VARARG
+static int using_compat_vararg=1;	/* using compat vararg? */
+#endif
 static char Output[]={ OUTPUT };	/* default output file name */
 static const char* output=Output;	/* actual output file name */
 static const char* progname=PROGNAME;	/* actual program name */
@@ -59,6 +62,9 @@ static void usage(const char* message)
  "  -o name  output to file " LUA_QL("name") " (default is \"%s\")\n"
  "  -p       parse only\n"
  "  -s       strip debug information\n"
+#ifdef LUA_COMPAT_VARARG
+ "  -dv      disable compat vararg\n"
+#endif
  "  -v       show version information\n"
  "  --       stop handling options\n",
  progname,Output);
@@ -96,6 +102,10 @@ static int doargs(int argc, char* argv[])
    dumping=0;
   else if (IS("-s"))			/* strip debug information */
    stripping=1;
+#ifdef LUA_COMPAT_VARARG
+  else if (IS("-dv"))			/* disable compat vararg */
+   using_compat_vararg=0;
+#endif
   else if (IS("-v"))			/* show version */
    ++version;
   else					/* unknown option */
@@ -192,6 +202,9 @@ int main(int argc, char* argv[])
  if (argc<=0) usage("no input files given");
  L=lua_open();
  if (L==NULL) fatal("not enough memory for state");
+#ifdef LUA_COMPAT_VARARG
+ lua_using_compat_vararg(L, using_compat_vararg);
+#endif
  s.argc=argc;
  s.argv=argv;
  if (lua_cpcall(L,pmain,&s)!=0) fatal(lua_tostring(L,-1));
