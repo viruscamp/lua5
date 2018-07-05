@@ -1,5 +1,5 @@
 /*
-** $Id: ldebug.c,v 2.155 2018/02/17 19:29:29 roberto Exp $
+** $Id: ldebug.c,v 2.158 2018/06/08 19:06:59 roberto Exp $
 ** Debug Interface
 ** See Copyright Notice in lua.h
 */
@@ -55,7 +55,7 @@ static int currentpc (CallInfo *ci) {
 ** case is when there is no absolute info or the instruction is before
 ** the first absolute one.
 */
-static int getbaseline (Proto *f, int pc, int *basepc) {
+static int getbaseline (const Proto *f, int pc, int *basepc) {
   if (f->sizeabslineinfo == 0 || pc < f->abslineinfo[0].pc) {
     *basepc = -1;  /* start from the beginning */
     return f->linedefined;
@@ -86,7 +86,7 @@ static int getbaseline (Proto *f, int pc, int *basepc) {
 ** first gets a base line and from there does the increments until
 ** the desired instruction.
 */
-int luaG_getfuncline (Proto *f, int pc) {
+int luaG_getfuncline (const Proto *f, int pc) {
   if (f->lineinfo == NULL)  /* no debug information? */
     return -1;
   else {
@@ -180,7 +180,7 @@ LUA_API int lua_getstack (lua_State *L, int level, lua_Debug *ar) {
 }
 
 
-static const char *upvalname (Proto *p, int uv) {
+static const char *upvalname (const Proto *p, int uv) {
   TString *s = check_exp(uv < p->sizeupvalues, p->upvalues[uv].name);
   if (s == NULL) return "?";
   else return getstr(s);
@@ -265,7 +265,7 @@ static void funcinfo (lua_Debug *ar, Closure *cl) {
     ar->what = "C";
   }
   else {
-    Proto *p = cl->l.p;
+    const Proto *p = cl->l.p;
     ar->source = p->source ? getstr(p->source) : "=?";
     ar->linedefined = p->linedefined;
     ar->lastlinedefined = p->lastlinedefined;
@@ -275,7 +275,7 @@ static void funcinfo (lua_Debug *ar, Closure *cl) {
 }
 
 
-static int nextline (Proto *p, int currentline, int pc) {
+static int nextline (const Proto *p, int currentline, int pc) {
   if (p->lineinfo[pc] != ABSLINEINFO)
     return currentline + p->lineinfo[pc];
   else
@@ -291,7 +291,7 @@ static void collectvalidlines (lua_State *L, Closure *f) {
   else {
     int i;
     TValue v;
-    Proto *p = f->l.p;
+    const Proto *p = f->l.p;
     int currentline = p->linedefined;
     Table *t = luaH_new(L);  /* new table to store active lines */
     sethvalue2s(L, L->top, t);  /* push it on stack */
@@ -358,10 +358,10 @@ static int auxgetinfo (lua_State *L, const char *what, lua_Debug *ar,
       }
       case 'r': {
         if (ci == NULL || !(ci->callstatus & CIST_TRAN))
-          ar->fTransfer = ar->nTransfer = 0;
+          ar->ftransfer = ar->ntransfer = 0;
         else {
-          ar->fTransfer = ci->u2.transferinfo.fTransfer;
-          ar->nTransfer = ci->u2.transferinfo.nTransfer;
+          ar->ftransfer = ci->u2.transferinfo.ftransfer;
+          ar->ntransfer = ci->u2.transferinfo.ntransfer;
         }
       }
       case 'L':
@@ -411,14 +411,14 @@ LUA_API int lua_getinfo (lua_State *L, const char *what, lua_Debug *ar) {
 ** =======================================================
 */
 
-static const char *getobjname (Proto *p, int lastpc, int reg,
+static const char *getobjname (const Proto *p, int lastpc, int reg,
                                const char **name);
 
 
 /*
 ** Find a "name" for the constant 'c'.
 */
-static void kname (Proto *p, int c, const char **name) {
+static void kname (const Proto *p, int c, const char **name) {
   TValue *kvalue = &p->k[c];
   *name = (ttisstring(kvalue)) ? svalue(kvalue) : "?";
 }
@@ -427,7 +427,7 @@ static void kname (Proto *p, int c, const char **name) {
 /*
 ** Find a "name" for the register 'c'.
 */
-static void rname (Proto *p, int pc, int c, const char **name) {
+static void rname (const Proto *p, int pc, int c, const char **name) {
   const char *what = getobjname(p, pc, c, name); /* search for 'c' */
   if (!(what && *what == 'c'))  /* did not find a constant name? */
     *name = "?";
@@ -437,7 +437,7 @@ static void rname (Proto *p, int pc, int c, const char **name) {
 /*
 ** Find a "name" for a 'C' value in an RK instruction.
 */
-static void rkname (Proto *p, int pc, Instruction i, const char **name) {
+static void rkname (const Proto *p, int pc, Instruction i, const char **name) {
   int c = GETARG_C(i);  /* key index */
   if (GETARG_k(i))  /* is 'c' a constant? */
     kname(p, c, name);
@@ -456,7 +456,7 @@ static int filterpc (int pc, int jmptarget) {
 /*
 ** try to find last instruction before 'lastpc' that modified register 'reg'
 */
-static int findsetreg (Proto *p, int lastpc, int reg) {
+static int findsetreg (const Proto *p, int lastpc, int reg) {
   int pc;
   int setreg = -1;  /* keep last instruction that changed 'reg' */
   int jmptarget = 0;  /* any code before this address is conditional */
@@ -504,7 +504,7 @@ static int findsetreg (Proto *p, int lastpc, int reg) {
 ** Check whether table being indexed by instruction 'i' is the
 ** environment '_ENV'
 */
-static const char *gxf (Proto *p, int pc, Instruction i, int isup) {
+static const char *gxf (const Proto *p, int pc, Instruction i, int isup) {
   int t = GETARG_B(i);  /* table index */
   const char *name;  /* name of indexed variable */
   if (isup)  /* is an upvalue? */
@@ -515,7 +515,8 @@ static const char *gxf (Proto *p, int pc, Instruction i, int isup) {
 }
 
 
- const char *getobjname (Proto *p, int lastpc, int reg, const char **name) {
+ const char *getobjname (const Proto *p, int lastpc, int reg,
+                         const char **name) {
   int pc;
   *name = luaF_getlocalname(p, reg + 1, lastpc);
   if (*name)  /* is a local? */
@@ -585,7 +586,7 @@ static const char *gxf (Proto *p, int pc, Instruction i, int isup) {
 static const char *funcnamefromcode (lua_State *L, CallInfo *ci,
                                      const char **name) {
   TMS tm = (TMS)0;  /* (initial value avoids warnings) */
-  Proto *p = ci_func(ci)->p;  /* calling function */
+  const Proto *p = ci_func(ci)->p;  /* calling function */
   int pc = currentpc(ci);  /* calling instruction index */
   Instruction i = p->code[pc];  /* calling instruction */
   if (ci->callstatus & CIST_HOOKED) {  /* was it called inside a hook? */
@@ -774,7 +775,7 @@ l_noret luaG_runerror (lua_State *L, const char *fmt, ...) {
 ** Check whether new instruction 'newpc' is in a different line from
 ** previous instruction 'oldpc'.
 */
-static int changedline (Proto *p, int oldpc, int newpc) {
+static int changedline (const Proto *p, int oldpc, int newpc) {
   while (oldpc++ < newpc) {
     if (p->lineinfo[oldpc] != 0)
       return (luaG_getfuncline(p, oldpc - 1) != luaG_getfuncline(p, newpc));
@@ -783,33 +784,39 @@ static int changedline (Proto *p, int oldpc, int newpc) {
 }
 
 
-void luaG_traceexec (lua_State *L) {
+int luaG_traceexec (lua_State *L, const Instruction *pc) {
   CallInfo *ci = L->ci;
   lu_byte mask = L->hookmask;
-  int counthook = (--L->hookcount == 0 && (mask & LUA_MASKCOUNT));
+  int counthook;
+  if (!(mask & (LUA_MASKLINE | LUA_MASKCOUNT))) {  /* no hooks? */
+    ci->u.l.trap = 0;  /* don't need to stop again */
+    return 0;  /* turn off 'trap' */
+  }
+  pc++;  /* reference is always next instruction */
+  ci->u.l.savedpc = pc;  /* save 'pc' */
+  counthook = (--L->hookcount == 0 && (mask & LUA_MASKCOUNT));
   if (counthook)
     resethookcount(L);  /* reset count */
   else if (!(mask & LUA_MASKLINE))
-    return;  /* no line hook and count != 0; nothing to be done */
+    return 1;  /* no line hook and count != 0; nothing to be done now */
   if (ci->callstatus & CIST_HOOKYIELD) {  /* called hook last time? */
     ci->callstatus &= ~CIST_HOOKYIELD;  /* erase mark */
-    return;  /* do not call hook again (VM yielded, so it did not move) */
+    return 1;  /* do not call hook again (VM yielded, so it did not move) */
   }
   if (!isIT(*(ci->u.l.savedpc - 1)))
     L->top = ci->top;  /* prepare top */
   if (counthook)
     luaD_hook(L, LUA_HOOKCOUNT, -1, 0, 0);  /* call count hook */
   if (mask & LUA_MASKLINE) {
-    Proto *p = ci_func(ci)->p;
-    const Instruction *npc = ci->u.l.savedpc;
-    int npci = pcRel(npc, p);
+    const Proto *p = ci_func(ci)->p;
+    int npci = pcRel(pc, p);
     if (npci == 0 ||  /* call linehook when enter a new function, */
-        npc <= L->oldpc ||  /* when jump back (loop), or when */
+        pc <= L->oldpc ||  /* when jump back (loop), or when */
         changedline(p, pcRel(L->oldpc, p), npci)) {  /* enter new line */
-      int newline = luaG_getfuncline(p, npci);  /* new line */
+      int newline = luaG_getfuncline(p, npci);
       luaD_hook(L, LUA_HOOKLINE, newline, 0, 0);  /* call line hook */
     }
-    L->oldpc = npc;
+    L->oldpc = pc;  /* 'pc' of last call to line hook */
   }
   if (L->status == LUA_YIELD) {  /* did hook yield? */
     if (counthook)
@@ -818,5 +825,6 @@ void luaG_traceexec (lua_State *L) {
     ci->callstatus |= CIST_HOOKYIELD;  /* mark that it yielded */
     luaD_throw(L, LUA_YIELD);
   }
+  return 1;  /* keep 'trap' on */
 }
 

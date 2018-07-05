@@ -1,5 +1,5 @@
 /*
-** $Id: lobject.h,v 2.141 2018/02/26 14:16:05 roberto Exp $
+** $Id: lobject.h,v 2.146 2018/06/15 19:31:22 roberto Exp $
 ** Type definitions for Lua objects
 ** See Copyright Notice in lua.h
 */
@@ -137,16 +137,14 @@ typedef StackValue *StkId;  /* index to stack elements */
 ** ===================================================================
 */
 
-#define ttisnil(o)		checktag((o), LUA_TNIL)
+/* macro to test for (any kind of) nil */
+#define ttisnil(v)		checktype((v), LUA_TNIL)
 
-/* macro defining a nil value */
-#define NILCONSTANT	{NULL}, LUA_TNIL
+/* macro to test for a "pure" nil */
+#define ttisstrictnil(o)	checktag((o), LUA_TNIL)
+
 
 #define setnilvalue(obj) settt_(obj, LUA_TNIL)
-
-
-/* (address of) a fixed nil value */
-#define luaO_nilobject		(&luaO_nilobject_)
 
 
 /*
@@ -155,23 +153,32 @@ typedef StackValue *StkId;  /* index to stack elements */
 */
 #define LUA_TEMPTY	(LUA_TNIL | (1 << 4))
 
-#define ttisnilorempty(v)	checktype((v), LUA_TNIL)
+/*
+** Variant used only in the value returned for a key not found in a
+** table (absent key).
+*/
+#define LUA_TABSTKEY	(LUA_TNIL | (2 << 4))
 
-#define isreallyempty(v)	checktag((v), LUA_TEMPTY)
+
+#define isabstkey(v)		checktag((v), LUA_TABSTKEY)
 
 
-#if defined(LUA_NILINTABLE)
+/*
+** macro to detect non-standard nils (used only in assertions)
+*/
+#define isreallyempty(v)	(ttisnil(v) && !ttisstrictnil(v))
 
-#define isempty(v)		isreallyempty(v)
 
-#else /* By default, entries with any kind of nil are considered empty */
+/*
+** By default, entries with any kind of nil are considered empty.
+** (In any definition, values associated with absent keys must also
+** be accepted as empty.)
+*/
+#define isempty(v)		ttisnil(v)
 
-#define isempty(v)		ttisnilorempty(v)
 
-#endif
-
-/* macro defining an empty value */
-#define EMPTYCONSTANT	{NULL}, LUA_TEMPTY
+/* macro defining a value corresponding to an absent key */
+#define ABSTKEYCONSTANT		{NULL}, LUA_TABSTKEY
 
 
 /* mark an entry as empty */
@@ -659,11 +666,24 @@ typedef union Node {
 	  (void)L; checkliveness(L,io_); }
 
 
+/*
+** About 'alimit': if 'isrealasize(t)' is true, then 'alimit' is the
+** real size of 'array'. Otherwise, the real size of 'array' is the
+** smallest power of two not smaller than 'alimit' (or zero iff 'alimit'
+** is zero); 'alimit' is then used as a hint for #t.
+*/
+
+#define BITRAS		(1 << 7)
+#define isrealasize(t)		(!((t)->marked & BITRAS))
+#define setrealasize(t)		((t)->marked &= cast_byte(~BITRAS))
+#define setnorealasize(t)	((t)->marked |= BITRAS)
+
+
 typedef struct Table {
   CommonHeader;
   lu_byte flags;  /* 1<<p means tagmethod(p) is not present */
   lu_byte lsizenode;  /* log2 of size of 'node' array */
-  unsigned int sizearray;  /* size of 'array' array */
+  unsigned int alimit;  /* "limit" of 'array' array */
   TValue *array;  /* array part */
   Node *node;
   Node *lastfree;  /* any free position is before this position */
@@ -715,8 +735,6 @@ typedef struct Table {
 #define twoto(x)	(1<<(x))
 #define sizenode(t)	(twoto((t)->lsizenode))
 
-
-LUAI_DDEC const TValue luaO_nilobject_;
 
 /* size of buffer for 'luaO_utf8esc' function */
 #define UTF8BUFFSZ	8

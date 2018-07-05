@@ -1,5 +1,5 @@
 /*
-** $Id: ltm.h,v 2.34 2018/02/27 17:48:28 roberto Exp $
+** $Id: ltm.h,v 2.39 2018/06/18 12:51:05 roberto Exp $
 ** Tag methods
 ** See Copyright Notice in lua.h
 */
@@ -9,7 +9,6 @@
 
 
 #include "lobject.h"
-#include "lstate.h"
 
 
 /*
@@ -19,8 +18,6 @@
 typedef enum {
   TM_INDEX,
   TM_NEWINDEX,
-  TM_UNDEF,
-  TM_ISDEF,
   TM_GC,
   TM_MODE,
   TM_LEN,
@@ -51,7 +48,7 @@ typedef enum {
 ** Test whether there is no tagmethod.
 ** (Because tagmethods use raw accesses, the result may be an "empty" nil.)
 */
-#define notm(tm)	ttisnilorempty(tm)
+#define notm(tm)	ttisnil(tm)
 
 
 #define gfasttm(g,et,e) ((et) == NULL ? NULL : \
@@ -61,7 +58,7 @@ typedef enum {
 
 #define ttypename(x)	luaT_typenames_[(x) + 1]
 
-LUAI_DDEC const char *const luaT_typenames_[LUA_TOTALTAGS];
+LUAI_DDEC(const char *const luaT_typenames_[LUA_TOTALTAGS];)
 
 
 LUAI_FUNC const char *luaT_objtypename (lua_State *L, const TValue *o);
@@ -87,11 +84,9 @@ LUAI_FUNC int luaT_callorderiTM (lua_State *L, const TValue *p1, int v2,
                                  int inv, TMS event);
 
 LUAI_FUNC void luaT_adjustvarargs (lua_State *L, int nfixparams,
-                                   struct CallInfo *ci, Proto *p);
+                                   struct CallInfo *ci, const Proto *p);
 LUAI_FUNC void luaT_getvarargs (lua_State *L, struct CallInfo *ci,
                                               StkId where, int wanted);
-
-LUAI_FUNC int luaT_keydef (lua_State *L, TValue *obj, TValue *key, int remove);
 
 
 #endif

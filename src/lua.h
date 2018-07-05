@@ -1,5 +1,5 @@
 /*
-** $Id: lua.h,v 1.344 2018/03/05 14:15:32 roberto Exp $
+** $Id: lua.h,v 1.347 2018/06/18 12:08:10 roberto Exp $
 ** Lua - A Scripting Language
 ** Lua.org, PUC-Rio, Brazil (http://www.lua.org)
 ** See Copyright Notice at the end of this file
@@ -19,7 +19,7 @@
 #define LUA_VERSION_MAJOR	"5"
 #define LUA_VERSION_MINOR	"4"
 #define LUA_VERSION_NUM		504
-#define LUA_VERSION_RELEASE	"0" " (work1)"
+#define LUA_VERSION_RELEASE	"0"
 
 #define LUA_VERSION	"Lua " LUA_VERSION_MAJOR "." LUA_VERSION_MINOR
 #define LUA_RELEASE	LUA_VERSION "." LUA_VERSION_RELEASE
@@ -149,7 +149,7 @@ LUA_API lua_State *(lua_newthread) (lua_State *L);
 LUA_API lua_CFunction (lua_atpanic) (lua_State *L, lua_CFunction panicf);
 
 
-LUA_API const lua_Number *(lua_version) (lua_State *L);
+LUA_API lua_Number (lua_version) (lua_State *L);
 
 
 /*
@@ -331,9 +331,6 @@ LUA_API size_t   (lua_stringtonumber) (lua_State *L, const char *s);
 LUA_API lua_Alloc (lua_getallocf) (lua_State *L, void **ud);
 LUA_API void      (lua_setallocf) (lua_State *L, lua_Alloc f, void *ud);
 
-LUA_API void (lua_removekey) (lua_State *L, int idx);
-LUA_API int (lua_keyin) (lua_State *L, int idx);
-
 
 /*
 ** {==============================================================
@@ -461,8 +458,8 @@ struct lua_Debug {
   unsigned char nparams;/* (u) number of parameters */
   char isvararg;        /* (u) */
   char istailcall;	/* (t) */
-  unsigned short fTransfer;/* (r) index of first value transfered */
-  unsigned short nTransfer;   /* (r) number of transfered values */
+  unsigned short ftransfer;   /* (r) index of first value transferred */
+  unsigned short ntransfer;   /* (r) number of transferred values */
   char short_src[LUA_IDSIZE]; /* (S) */
   /* private part */
   struct CallInfo *i_ci;  /* active function */

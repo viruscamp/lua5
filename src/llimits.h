@@ -1,5 +1,5 @@
 /*
-** $Id: llimits.h,v 1.149 2018/01/28 15:13:26 roberto Exp $
+** $Id: llimits.h,v 1.151 2018/06/15 14:13:45 roberto Exp $
 ** Limits, basic types, and some other 'installation-dependent' definitions
 ** See Copyright Notice in lua.h
 */
@@ -57,6 +57,12 @@ typedef signed char ls_byte;
 ** (That is, maximum 'n' such that '2^n' fits in the given signed type.)
 */
 #define log2maxs(t)	(sizeof(t) * 8 - 2)
+
+
+/*
+** test whether an unsigned value is a power of 2 (or zero)
+*/
+#define ispow2(x)	(((x) & ((x) - 1)) == 0)
 
 
 /*
@@ -131,8 +137,26 @@ typedef LUAI_UACINT l_uacInt;
 
 
 /*
+** macros to improve jump prediction (used mainly for error handling)
+*/
+#if !defined(likely)
+
+#if defined(__GNUC__)
+#define likely(x)	(__builtin_expect(((x) != 0), 1))
+#define unlikely(x)	(__builtin_expect(((x) != 0), 0))
+#else
+#define likely(x)	(x)
+#define unlikely(x)	(x)
+#endif
+
+#endif
+
+
+/*
 ** non-return type
 */
+#if !defined(l_noret)
+
 #if defined(__GNUC__)
 #define l_noret		void __attribute__((noreturn))
 #elif defined(_MSC_VER) && _MSC_VER >= 1200
@@ -141,6 +165,7 @@ typedef LUAI_UACINT l_uacInt;
 #define l_noret		void
 #endif
 
+#endif
 
 
 /*

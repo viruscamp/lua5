@@ -1,5 +1,5 @@
 /*
-** $Id: lopcodes.h,v 1.190 2018/03/07 15:55:38 roberto Exp $
+** $Id: lopcodes.h,v 1.193 2018/06/18 12:51:05 roberto Exp $
 ** Opcodes for Lua virtual machine
 ** See Copyright Notice in lua.h
 */
@@ -266,9 +266,6 @@ OP_GEI,/*	A sB	if ((R(A) >= sB) ~= k) then pc++		*/
 OP_TEST,/*	A 	if (not R(A) == k) then pc++			*/
 OP_TESTSET,/*	A B	if (not R(B) == k) then R(A) := R(B) else pc++	*/
 
-OP_UNDEF,/*	A B	R(A)[R(B)] = undef				*/
-OP_ISDEF,/*	A B C	R(A) = (R(B)[R(C)] == undef			*/
-
 OP_CALL,/*	A B C	R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1)) */
 OP_TAILCALL,/*	A B C	return R(A)(R(A+1), ... ,R(A+B-1))		*/
 
@@ -291,7 +288,7 @@ OP_SETLIST,/*	A B C	R(A)[(C-1)*FPF+i] := R(A+i), 1 <= i <= B	*/
 
 OP_CLOSURE,/*	A Bx	R(A) := closure(KPROTO[Bx])			*/
 
-OP_VARARG,/*	A B C  	R(A), R(A+1), ..., R(A+C-2) = vararg		*/
+OP_VARARG,/*	A C  	R(A), R(A+1), ..., R(A+C-2) = vararg		*/
 
 OP_PREPVARARG,/*A 	(adjust vararg parameters)			*/
 
@@ -342,7 +339,7 @@ OP_EXTRAARG/*	Ax	extra (larger) argument for previous opcode	*/
 ** bit 6: instruction sets 'L->top' for next instruction (when C == 0)
 */
 
-LUAI_DDEC const lu_byte luaP_opmodes[NUM_OPCODES];
+LUAI_DDEC(const lu_byte luaP_opmodes[NUM_OPCODES];)
 
 #define getOpMode(m)	(cast(enum OpMode, luaP_opmodes[m] & 7))
 #define testAMode(m)	(luaP_opmodes[m] & (1 << 3))
@@ -361,7 +358,7 @@ LUAI_DDEC const lu_byte luaP_opmodes[NUM_OPCODES];
 #define opmode(ot,it,t,a,m) (((ot)<<6) | ((it)<<5) | ((t)<<4) | ((a)<<3) | (m))
 
 
-LUAI_DDEC const char *const luaP_opnames[NUM_OPCODES+1];  /* opcode names */
+LUAI_DDEC(const char *const luaP_opnames[NUM_OPCODES+1];)  /* opcode names */
 
 
 /* number of list items to accumulate before a SETLIST instruction */

@@ -1,5 +1,5 @@
 /*
-** $Id: lparser.c,v 2.179 2018/03/07 15:55:38 roberto Exp $
+** $Id: lparser.c,v 2.181 2018/06/18 17:57:20 roberto Exp $
 ** Lua Parser
 ** See Copyright Notice in lua.h
 */
@@ -893,11 +893,6 @@ static void primaryexp (LexState *ls, expdesc *v) {
       singlevar(ls, v);
       return;
     }
-    case TK_UNDEF: {
-      luaX_next(ls);
-      init_exp(v, VUNDEF, 0);
-      return;
-    }
     default: {
       luaX_syntaxerror(ls, "unexpected symbol");
     }
@@ -1183,10 +1178,6 @@ static void assignment (LexState *ls, struct LHS_assign *lh, int nvars) {
   else {  /* assignment -> '=' explist */
     int nexps;
     checknext(ls, '=');
-    if (nvars == 1 && testnext(ls, TK_UNDEF)) {
-      luaK_codeundef(ls->fs, &lh->v);
-      return;
-    }
     nexps = explist(ls, &e);
     if (nexps != nvars)
       adjust_assign(ls, nvars, nexps, &e);
@@ -1652,11 +1643,6 @@ static void statement (LexState *ls) {
       luaX_next(ls);  /* skip LOCAL */
       if (testnext(ls, TK_FUNCTION))  /* local function? */
         localfunc(ls);
-      else if (testnext(ls, TK_UNDEF))
-        (void)0;  /* ignore */
-      /* old versions may need to declare 'local undef'
-         when using 'undef' with no environment; so this
-         version accepts (and ignores) these declarations */
       else
         localstat(ls);
       break;
@@ -1723,7 +1709,7 @@ LClosure *luaY_parser (lua_State *L, ZIO *z, Mbuffer *buff,
   luaD_inctop(L);
   funcstate.f = cl->p = luaF_newproto(L);
   funcstate.f->source = luaS_new(L, name);  /* create and anchor TString */
-  lua_assert(iswhite(funcstate.f));  /* do not need barrier here */
+  luaC_objbarrier(L, funcstate.f, funcstate.f->source);
   lexstate.buff = buff;
   lexstate.dyd = dyd;
   dyd->actvar.n = dyd->gt.n = dyd->label.n = 0;

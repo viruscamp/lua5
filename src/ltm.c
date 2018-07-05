@@ -1,5 +1,5 @@
 /*
-** $Id: ltm.c,v 2.66 2018/02/27 17:48:28 roberto Exp $
+** $Id: ltm.c,v 2.70 2018/06/15 19:31:22 roberto Exp $
 ** Tag methods
 ** See Copyright Notice in lua.h
 */
@@ -38,7 +38,6 @@ LUAI_DDEF const char *const luaT_typenames_[LUA_TOTALTAGS] = {
 void luaT_init (lua_State *L) {
   static const char *const luaT_eventname[] = {  /* ORDER TM */
     "__index", "__newindex",
-    "__undef", "__isdef",
     "__gc", "__mode", "__len", "__eq",
     "__add", "__sub", "__mul", "__mod", "__pow",
     "__div", "__idiv",
@@ -81,7 +80,7 @@ const TValue *luaT_gettmbyobj (lua_State *L, const TValue *o, TMS event) {
     default:
       mt = G(L)->mt[ttype(o)];
   }
-  return (mt ? luaH_getshortstr(mt, G(L)->tmname[event]) : luaO_nilobject);
+  return (mt ? luaH_getshortstr(mt, G(L)->tmname[event]) : &G(L)->nilvalue);
 }
 
 
@@ -217,7 +216,7 @@ int luaT_callorderiTM (lua_State *L, const TValue *p1, int v2,
 
 
 void luaT_adjustvarargs (lua_State *L, int nfixparams, CallInfo *ci,
-                         Proto *p) {
+                         const Proto *p) {
   int i;
   int actual = cast_int(L->top - ci->func) - 1;  /* number of arguments */
   int nextra = actual - nfixparams;  /* number of extra arguments */
@@ -250,30 +249,3 @@ void luaT_getvarargs (lua_State *L, CallInfo *ci, StkId where, int wanted) {
     setnilvalue(s2v(where + i));
 }
 
-
-int luaT_keydef (lua_State *L, TValue *obj, TValue *key, int remove) {
-  const TValue *tm;
-  TMS event = remove ? TM_UNDEF : TM_ISDEF;
-  if (!ttistable(obj)) {  /* not a table? */
-    tm = luaT_gettmbyobj(L, obj, event);  /* get its metamethod */
-    if (notm(tm)) {  /* no metamethod? */
-      const char *msg = remove ? "remove key from" : "check key from";
-      luaG_typeerror(L, obj, msg);  /* error */
-    }
-    /* else will call metamethod 'tm' */
-  }
-  else {  /* 'obj' is a table */
-    Table *t = hvalue(obj);
-    tm = fasttm(L, t->metatable, event);
-    if (tm == NULL) {  /* no metamethod? */
-      const TValue *val = luaH_get(t, key);  /* get entry */
-      int res = !isempty(val);  /* true if entry is not empty */
-      if (remove && res)  /* key is present and should be removed? */
-        setempty(cast(TValue*, val));  /* remove it */
-      return res;
-    }
-    /* else will call metamethod 'tm' */
-  }
-  luaT_callTMres(L, tm, obj, key, L->top);
-  return !l_isfalse(s2v(L->top));
-}

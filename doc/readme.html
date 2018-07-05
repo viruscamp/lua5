@@ -47,7 +47,7 @@ Welcome to Lua 5.4
 
 <H2><A NAME="about">About Lua</A></H2>
 <P>
-Lua is a powerful, fast, lightweight, embeddable scripting language
+Lua is a powerful, efficient, lightweight, embeddable scripting language
 developed by a
 <A HREF="http://www.lua.org/authors.html">team</A>
 at
@@ -55,7 +55,9 @@ at
 the Pontifical Catholic University of Rio de Janeiro in Brazil.
 Lua is
 <A HREF="#license">free software</A>
-used in many products and projects around the world.
+used in
+<A HREF="http://www.lua.org/uses.html">many products and projects</A>
+around the world.
 
 <P>
 Lua's
@@ -85,7 +87,8 @@ because
 Lua is implemented in pure ANSI C and compiles unmodified in all known
 platforms that have an ANSI C compiler.
 Lua also compiles unmodified as C++.
-The instructions given below for building Lua are for Unix-like platforms.
+The instructions given below for building Lua are for Unix-like platforms,
+such as Linux and Mac OS X.
 See also
 <A HREF="#other">instructions for other systems</A>
 and
@@ -107,7 +110,7 @@ Here are the details.
 <OL>
 <LI>
 Open a terminal window and move to
-the top-level directory, which is named <TT>lua-5.4.x</TT>.
+the top-level directory, which is named <TT>lua-5.4.0-work2</TT>.
 The <TT>Makefile</TT> there controls both the build process and the installation process.
 <P>
 <LI>
@@ -147,7 +150,7 @@ then try "<KBD>make linux MYLIBS=-ltermcap</KBD>".
   Once you have built Lua, you may want to install it in an official
   place in your system. In this case, do "<KBD>make install</KBD>". The official
   place and the way to install files are defined in the <TT>Makefile</TT>. You'll
-  probably need the right permissions to install files.
+  probably need the right permissions to install files, and so make need to do "<KBD>sudo make install</KBD>".
 
 <P>
   To build and install Lua in one step, do "<KBD>make xxx install</KBD>",
@@ -223,11 +226,8 @@ then try "<KBD>make linux MYLIBS=-ltermcap</KBD>".
 <DT>
 library:
 <DD>
-lapi.c lcode.c lctype.c ldebug.c ldo.c ldump.c lfunc.c lgc.c llex.c
-lmem.c lobject.c lopcodes.c lparser.c lstate.c lstring.c ltable.c
-ltm.c lundump.c lvm.c lzio.c
-lauxlib.c lbaselib.c lbitlib.c lcorolib.c ldblib.c liolib.c
-lmathlib.c loslib.c lstrlib.c ltablib.c lutf8lib.c loadlib.c linit.c
+lapi.c lcode.c lctype.c ldebug.c ldo.c ldump.c lfunc.c lgc.c llex.c lmem.c lobject.c lopcodes.c lparser.c lstate.c lstring.c ltable.c ltm.c lundump.c lvm.c lzio.c
+lauxlib.c lbaselib.c lcorolib.c ldblib.c liolib.c lmathlib.c loadlib.c loslib.c lstrlib.c ltablib.c lutf8lib.c linit.c
 <DT>
 interpreter:
 <DD>
@@ -239,9 +239,9 @@ compiler:
 </DL>
 
 <P>
-  To use Lua as a library in your own programs you'll need to know how to
+  To use Lua as a library in your own programs, you'll need to know how to
   create and use libraries with your compiler. Moreover, to dynamically load
-  C libraries for Lua you'll need to know how to create dynamic libraries
+  C libraries for Lua, you'll need to know how to create dynamic libraries
   and you'll need to make sure that the Lua API functions are accessible to
   those dynamic libraries &mdash; but <EM>don't</EM> link the Lua library
   into each dynamic library. For Unix, we recommend that the Lua library
@@ -316,10 +316,10 @@ THE SOFTWARE.
 
 <P CLASS="footer">
 Last update:
-Mon Mar 12 14:52:57 -03 2018
+Mon Jun 18 17:08:42 -03 2018
 </P>
 <!--
-Last change: revised for Lua 5.4.0 (work1)
+Last change: revised for Lua 5.4.0 (work2)
 -->
 
 </BODY>

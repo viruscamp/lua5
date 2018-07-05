@@ -1,5 +1,5 @@
 /*
-** $Id: llex.c,v 2.101 2018/03/07 15:55:38 roberto Exp $
+** $Id: llex.c,v 2.102 2018/04/04 14:23:41 roberto Exp $
 ** Lexical Analyzer
 ** See Copyright Notice in lua.h
 */
@@ -41,7 +41,7 @@ static const char *const luaX_tokens [] = {
     "and", "break", "do", "else", "elseif",
     "end", "false", "for", "function", "goto", "if",
     "in", "local", "nil", "not", "or", "repeat",
-    "return", "then", "true", "undef", "until", "while",
+    "return", "then", "true", "until", "while",
     "//", "..", "...", "==", ">=", "<=", "~=",
     "<<", ">>", "::", "<eof>",
     "<number>", "<integer>", "<name>", "<string>"

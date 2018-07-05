@@ -1,5 +1,5 @@
 /*
-** $Id: lstate.c,v 2.151 2018/02/05 17:11:37 roberto Exp $
+** $Id: lstate.c,v 2.155 2018/06/18 12:08:10 roberto Exp $
 ** Global State
 ** See Copyright Notice in lua.h
 */
@@ -30,17 +30,6 @@
 
 
 /*
-** a macro to help the creation of a unique random seed when a state is
-** created; the seed is used to randomize hashes.
-*/
-#if !defined(luai_makeseed)
-#include <time.h>
-#define luai_makeseed()		cast_uint(time(NULL))
-#endif
-
-
-
-/*
 ** thread state + extra space
 */
 typedef struct LX {
@@ -63,24 +52,34 @@ typedef struct LG {
 
 
 /*
-** Compute an initial seed as random as possible. Rely on Address Space
-** Layout Randomization (if present) to increase randomness..
+** A macro to create a "random" seed when a state is created;
+** the seed is used to randomize string hashes.
+*/
+#if !defined(luai_makeseed)
+
+#include <time.h>
+
+/*
+** Compute an initial seed with some level of randomness.
+** Rely on Address Space Layout Randomization (if present) and
+** current time.
 */
 #define addbuff(b,p,e) \
   { size_t t = cast_sizet(e); \
     memcpy(b + p, &t, sizeof(t)); p += sizeof(t); }
 
-static unsigned int makeseed (lua_State *L) {
-  char buff[4 * sizeof(size_t)];
-  unsigned int h = luai_makeseed();
+static unsigned int luai_makeseed (lua_State *L) {
+  char buff[3 * sizeof(size_t)];
+  unsigned int h = cast_uint(time(NULL));
   int p = 0;
   addbuff(buff, p, L);  /* heap variable */
   addbuff(buff, p, &h);  /* local variable */
-  addbuff(buff, p, luaO_nilobject);  /* global variable */
   addbuff(buff, p, &lua_newstate);  /* public function */
   lua_assert(p == sizeof(buff));
   return luaS_hash(buff, p, h);
 }
+
+#endif
 
 
 /*
@@ -216,7 +215,7 @@ static void init_registry (lua_State *L, global_State *g) {
 
 /*
 ** open parts of the state that may cause memory-allocation errors.
-** ('g->version' != NULL flags that the state was completely build)
+** ('ttisnil(&g->nilvalue)'' flags that the state was completely build)
 */
 static void f_luaopen (lua_State *L, void *ud) {
   global_State *g = G(L);
@@ -227,7 +226,7 @@ static void f_luaopen (lua_State *L, void *ud) {
   luaT_init(L);
   luaX_init(L);
   g->gcrunning = 1;  /* allow gc */
-  g->version = lua_version(NULL);
+  setnilvalue(&g->nilvalue);
   luai_userstateopen(L);
 }
 
@@ -261,7 +260,7 @@ static void close_state (lua_State *L) {
   global_State *g = G(L);
   luaF_close(L, L->stack);  /* close all upvalues for this thread */
   luaC_freeallobjects(L);  /* collect all objects */
-  if (g->version)  /* closing a fully built state? */
+  if (ttisnil(&g->nilvalue))  /* closing a fully built state? */
     luai_userstateclose(L);
   luaM_freearray(L, G(L)->strt.hash, G(L)->strt.size);
   freestack(L);
@@ -327,13 +326,12 @@ LUA_API lua_State *lua_newstate (lua_Alloc f, void *ud) {
   g->frealloc = f;
   g->ud = ud;
   g->mainthread = L;
-  g->seed = makeseed(L);
+  g->seed = luai_makeseed(L);
   g->gcrunning = 0;  /* no GC while building state */
   g->strt.size = g->strt.nuse = 0;
   g->strt.hash = NULL;
   setnilvalue(&g->l_registry);
   g->panic = NULL;
-  g->version = NULL;
   g->gcstate = GCSpause;
   g->gckind = KGC_INC;
   g->gcemergency = 0;
@@ -346,6 +344,7 @@ LUA_API lua_State *lua_newstate (lua_Alloc f, void *ud) {
   g->twups = NULL;
   g->totalbytes = sizeof(LG);
   g->GCdebt = 0;
+  setivalue(&g->nilvalue, 0);  /* to signal that state is not yet built */
   setgcparam(g->gcpause, LUAI_GCPAUSE);
   setgcparam(g->gcstepmul, LUAI_GCMUL);
   g->gcstepsize = LUAI_GCSTEPSIZE;
