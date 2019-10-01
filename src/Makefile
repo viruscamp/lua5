@@ -132,6 +132,17 @@ SunOS solaris:
 # list targets that do not create files (but not all makes understand .PHONY)
 .PHONY: all $(PLATS) default o a clean depend echo none
 
+llex.o:
+	$(CC) $(CFLAGS) -Os -c llex.c
+
+lparser.o:
+	$(CC) $(CFLAGS) -Os -c lparser.c
+
+lcode.o:
+	$(CC) $(CFLAGS) -Os -c lcode.c
+
+	
+
 # DO NOT DELETE
 
 lapi.o: lapi.c lprefix.h lua.h luaconf.h lapi.h llimits.h lstate.h \
